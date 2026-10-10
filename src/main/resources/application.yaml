@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${MAIN_DB_HOST:127.0.0.1}:${MAIN_DB_PORT:5432}/${MAIN_DB_NAME:bori}?reWriteBatchedInserts=true
+    username: ${MAIN_DB_USERNAME:postgres}
+    password: ${MAIN_DB_PASSWORD:postgres}
+
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
