@@ -42,7 +42,7 @@ public class AuthService {
             throw new DuplicateEmailException();
         }
 
-        User user = User.createStudent(request.email(), passwordEncoder.encode(request.password()));
+        User user = User.createStudent(request.email(), passwordEncoder.encode(request.password()), request.name(), request.studentNo());
         return UserInfoResponse.from(userRepository.save(user));
     }
 

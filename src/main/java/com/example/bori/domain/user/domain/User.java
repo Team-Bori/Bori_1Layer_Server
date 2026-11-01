@@ -33,6 +33,13 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false, length = 50)
+    private String name;
+
+    // 관리자는 학번이 없다.
+    @Column(name = "student_no", length = 10)
+    private String studentNo;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
@@ -41,14 +48,16 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    private User(String email, String password, Role role) {
+    private User(String email, String password, String name, String studentNo, Role role) {
         this.email = email;
         this.password = password;
+        this.name = name;
+        this.studentNo = studentNo;
         this.role = role;
     }
 
     // 가입으로는 학생만 만든다. 관리자는 DB에 직접 넣는다.
-    public static User createStudent(String email, String encodedPassword) {
-        return new User(email, encodedPassword, Role.STUDENT);
+    public static User createStudent(String email, String encodedPassword, String name, String studentNo) {
+        return new User(email, encodedPassword, name, studentNo, Role.STUDENT);
     }
 }
