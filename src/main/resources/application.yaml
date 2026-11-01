@@ -1,11 +1,26 @@
-spring:
-  datasource:
-    url: jdbc:postgresql://${MAIN_DB_HOST:127.0.0.1}:${MAIN_DB_PORT:5432}/${MAIN_DB_NAME:bori}?reWriteBatchedInserts=true
-    username: ${MAIN_DB_USERNAME:postgres}
-    password: ${MAIN_DB_PASSWORD:postgres}
+server:
+  port: ${SERVER_PORT:8080}
 
+spring:
+  application:
+    name: bori
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:bori}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME:bori}
+    password: ${DB_PASSWORD:bori}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: ${DDL_AUTO:update}
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: Asia/Seoul
+    show-sql: ${SHOW_SQL:true}
 
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
