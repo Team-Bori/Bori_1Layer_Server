@@ -6,10 +6,9 @@ spring:
     name: bori
 
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:bori}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bori}
     username: ${DB_USERNAME:bori}
     password: ${DB_PASSWORD:bori}
-    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:

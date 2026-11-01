@@ -1,20 +1,16 @@
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: bori-mysql
+  postgres:
+    image: postgres:17
+    container_name: bori-postgres
     environment:
-      MYSQL_DATABASE: bori
-      MYSQL_USER: bori
-      MYSQL_PASSWORD: bori
-      MYSQL_ROOT_PASSWORD: root
+      POSTGRES_DB: bori
+      POSTGRES_USER: bori
+      POSTGRES_PASSWORD: bori
       TZ: Asia/Seoul
     ports:
-      - "${DB_PORT:-3306}:3306"
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
+      - "${DB_PORT:-5432}:5432"
     volumes:
-      - bori-mysql:/var/lib/mysql
+      - bori-postgres:/var/lib/postgresql/data
 
 volumes:
-  bori-mysql:
+  bori-postgres:
