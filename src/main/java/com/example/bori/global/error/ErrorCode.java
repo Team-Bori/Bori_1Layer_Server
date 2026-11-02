@@ -21,7 +21,20 @@ public enum ErrorCode {
 
     // User
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "U001", "이미 사용 중인 이메일입니다."),
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U002", "사용자를 찾을 수 없습니다.");
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U002", "사용자를 찾을 수 없습니다."),
+
+    // Relay Pi
+    PI_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "릴레이 Pi를 찾을 수 없습니다."),
+    DUPLICATE_PI_SERIAL(HttpStatus.CONFLICT, "P002", "이미 등록된 Pi 시리얼입니다."),
+
+    // Cloud board
+    BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "B001", "보드를 찾을 수 없습니다."),
+    DUPLICATE_BOARD_SERIAL(HttpStatus.CONFLICT, "B002", "이미 등록된 보드 시리얼입니다."),
+    DUPLICATE_BOARD_SLOT(HttpStatus.CONFLICT, "B003", "해당 Pi의 USB 슬롯에 이미 다른 보드가 있습니다."),
+
+    // AI model
+    MODEL_NOT_FOUND(HttpStatus.NOT_FOUND, "M001", "모델을 찾을 수 없습니다."),
+    INVALID_GITHUB_URL(HttpStatus.BAD_REQUEST, "M002", "https://github.com/사용자/저장소 형식이어야 합니다.");
 
     private final HttpStatus status;
     private final String code;
