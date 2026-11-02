@@ -34,6 +34,10 @@ bori:
   github:
     codeload-base-url: ${GITHUB_CODELOAD_BASE_URL:https://codeload.github.com}
 
+  # 성능 지표(metric_sample) 보관 기간. 매일 04:30에 지난 샘플을 지운다.
+  metric:
+    retention-days: ${METRIC_RETENTION_DAYS:30}
+
   # 관리자 계정 시드. 이메일·비밀번호가 둘 다 있고 그 이메일이 없을 때만 만든다.
   admin:
     email: ${ADMIN_EMAIL:}

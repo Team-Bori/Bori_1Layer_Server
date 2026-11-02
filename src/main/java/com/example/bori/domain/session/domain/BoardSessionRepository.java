@@ -32,6 +32,9 @@ public interface BoardSessionRepository extends JpaRepository<BoardSession, Long
     @Query("select s.id from BoardSession s where s.endedAt is null and s.lastActiveAt < :cutoff")
     List<Long> findIdleIds(@Param("cutoff") LocalDateTime cutoff);
 
+    @EntityGraph(attributePaths = {"cloudBoard", "aiModel", "upload"})
+    List<BoardSession> findAllByUserIdAndStartedAtAfterOrderByIdDesc(Long userId, LocalDateTime after);
+
     @Query("select s from BoardSession s join fetch s.cloudBoard b join fetch b.pi where s.id = :id")
     Optional<BoardSession> findWithBoard(@Param("id") Long id);
 }
