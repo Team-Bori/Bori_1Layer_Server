@@ -52,7 +52,20 @@ public enum ErrorCode {
     QUEUE_NOT_NEEDED(HttpStatus.CONFLICT, "Q001", "지금 바로 접속할 수 있는 보드입니다."),
     QUEUE_FULL(HttpStatus.CONFLICT, "Q002", "대기열이 가득 찼습니다."),
     ALREADY_QUEUED(HttpStatus.CONFLICT, "Q003", "이미 대기열에 등록되어 있습니다. 대기는 한 번에 하나만 가능합니다."),
-    QUEUE_NOT_FOUND(HttpStatus.NOT_FOUND, "Q004", "대기 중인 항목이 없습니다.");
+    QUEUE_NOT_FOUND(HttpStatus.NOT_FOUND, "Q004", "대기 중인 항목이 없습니다."),
+
+    // Rental
+    RENTAL_BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "R001", "대여 보드를 찾을 수 없습니다."),
+    RENTAL_BOARD_NOT_AVAILABLE(HttpStatus.CONFLICT, "R002", "지금은 대여할 수 없는 보드입니다."),
+    RENTAL_NOT_FOUND(HttpStatus.NOT_FOUND, "R003", "대여 기록을 찾을 수 없습니다."),
+    INVALID_RENTAL_STATE(HttpStatus.CONFLICT, "R004", "지금 상태에서는 할 수 없는 요청입니다."),
+    RENTAL_STATUS_NOT_MANUAL(HttpStatus.BAD_REQUEST, "R005", "대여중·반납대기는 대여 흐름으로만 바뀝니다."),
+    RENTAL_BOARD_IN_USE(HttpStatus.CONFLICT, "R006", "대여 중인 보드는 상태를 바꿀 수 없습니다."),
+
+    // File
+    INVALID_FILE(HttpStatus.BAD_REQUEST, "F001", "jpg, png, webp 이미지(5MB 이하)만 올릴 수 있습니다."),
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "F002", "사진을 저장하지 못했습니다."),
+    STORAGE_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "F003", "사진 저장소가 설정되지 않았습니다.");
 
     private final HttpStatus status;
     private final String code;
