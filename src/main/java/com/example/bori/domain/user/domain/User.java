@@ -56,8 +56,13 @@ public class User {
         this.role = role;
     }
 
-    // 가입으로는 학생만 만든다. 관리자는 DB에 직접 넣는다.
+    // 가입으로는 학생만 만든다.
     public static User createStudent(String email, String encodedPassword, String name, String studentNo) {
         return new User(email, encodedPassword, name, studentNo, Role.STUDENT);
+    }
+
+    // 관리자는 가입 API로 만들 수 없고, 기동 시 환경변수로 시드한다. 학번은 없다.
+    public static User createAdmin(String email, String encodedPassword, String name) {
+        return new User(email, encodedPassword, name, null, Role.ADMIN);
     }
 }
