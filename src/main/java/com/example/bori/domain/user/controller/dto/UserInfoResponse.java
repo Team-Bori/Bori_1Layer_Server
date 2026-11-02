@@ -8,10 +8,12 @@ public record UserInfoResponse(
         String email,
         String name,
         String studentNo,
-        Role role
+        Role role,
+        boolean notifyEnabled
 ) {
 
     public static UserInfoResponse from(User user) {
-        return new UserInfoResponse(user.getId(), user.getEmail(), user.getName(), user.getStudentNo(), user.getRole());
+        return new UserInfoResponse(user.getId(), user.getEmail(), user.getName(), user.getStudentNo(), user.getRole(),
+                user.isNotifyEnabled());
     }
 }

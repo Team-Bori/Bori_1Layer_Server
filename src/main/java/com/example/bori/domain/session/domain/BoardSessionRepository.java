@@ -4,6 +4,8 @@ import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -34,6 +36,17 @@ public interface BoardSessionRepository extends JpaRepository<BoardSession, Long
 
     @EntityGraph(attributePaths = {"cloudBoard", "aiModel", "upload"})
     List<BoardSession> findAllByUserIdAndStartedAtAfterOrderByIdDesc(Long userId, LocalDateTime after);
+
+    // 관리자 접속 이력: 사용자 이름·학번·보드명으로 검색. q가 빈 문자열이면 전체.
+    @EntityGraph(attributePaths = {"user", "cloudBoard", "aiModel", "upload"})
+    @Query("""
+            select s from BoardSession s
+            where lower(s.user.name) like lower(concat('%', :q, '%'))
+               or coalesce(s.user.studentNo, '') like concat('%', :q, '%')
+               or lower(s.cloudBoard.name) like lower(concat('%', :q, '%'))
+            order by s.id desc
+            """)
+    Page<BoardSession> search(@Param("q") String q, Pageable pageable);
 
     @Query("select s from BoardSession s join fetch s.cloudBoard b join fetch b.pi where s.id = :id")
     Optional<BoardSession> findWithBoard(@Param("id") Long id);

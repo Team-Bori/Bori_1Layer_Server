@@ -44,6 +44,10 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    // 브라우저 시스템 알림 허용 (알림 자체는 항상 저장된다)
+    @Column(name = "notify_enabled", nullable = false)
+    private boolean notifyEnabled;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -54,6 +58,10 @@ public class User {
         this.name = name;
         this.studentNo = studentNo;
         this.role = role;
+    }
+
+    public void changeNotifyEnabled(boolean enabled) {
+        this.notifyEnabled = enabled;
     }
 
     // 가입으로는 학생만 만든다.

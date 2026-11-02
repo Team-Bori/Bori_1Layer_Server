@@ -22,6 +22,14 @@ public class UserService {
         return UserInfoResponse.from(user);
     }
 
+    @Transactional
+    public UserInfoResponse changeNotifyEnabled(Long userId, boolean enabled) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+        user.changeNotifyEnabled(enabled);
+        return UserInfoResponse.from(user);
+    }
+
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
