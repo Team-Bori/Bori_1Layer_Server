@@ -2,13 +2,14 @@ package com.example.bori.global.config;
 
 import com.example.bori.domain.relay.socket.RelayHandshakeInterceptor;
 import com.example.bori.domain.relay.socket.RelayWebSocketHandler;
+import com.example.bori.global.push.ClientWebSocketHandler;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
-import org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean;
 
 @Configuration
 @EnableWebSocket
@@ -17,6 +18,10 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     private final RelayWebSocketHandler relayWebSocketHandler;
     private final RelayHandshakeInterceptor relayHandshakeInterceptor;
+    private final ClientWebSocketHandler clientWebSocketHandler;
+
+    @Value("${cors.allowed-origins}")
+    private List<String> allowedOrigins;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
@@ -24,14 +29,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
         registry.addHandler(relayWebSocketHandler, "/ws/l2")
                 .addInterceptors(relayHandshakeInterceptor)
                 .setAllowedOriginPatterns("*");
-    }
-
-    // 기본 버퍼(8 KiB)로는 밀린 metric 묶음(최대 60개)이나 파일 조각을 받을 수 없다.
-    @Bean
-    public ServletServerContainerFactoryBean webSocketContainer() {
-        ServletServerContainerFactoryBean container = new ServletServerContainerFactoryBean();
-        container.setMaxTextMessageBufferSize(256 * 1024);
-        container.setMaxBinaryMessageBufferSize(512 * 1024);
-        return container;
+        // 브라우저 채널은 쿠키 인증이라 허용 출처를 CORS와 같게 제한한다.
+        registry.addHandler(clientWebSocketHandler, "/ws/client")
+                .setAllowedOrigins(allowedOrigins.toArray(String[]::new));
     }
 }

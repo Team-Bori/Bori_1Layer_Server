@@ -29,8 +29,12 @@ spring:
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
 
-# 관리자 계정 시드. 이메일·비밀번호가 둘 다 있고 그 이메일이 없을 때만 만든다.
+# 모델 저장소 zip을 받을 곳. 테스트할 때 로컬 서버로 바꿀 수 있다.
 bori:
+  github:
+    codeload-base-url: ${GITHUB_CODELOAD_BASE_URL:https://codeload.github.com}
+
+  # 관리자 계정 시드. 이메일·비밀번호가 둘 다 있고 그 이메일이 없을 때만 만든다.
   admin:
     email: ${ADMIN_EMAIL:}
     password: ${ADMIN_PASSWORD:}

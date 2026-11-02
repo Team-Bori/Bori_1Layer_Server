@@ -25,9 +25,4 @@ public record GithubRepoUrl(String owner, String repo) {
     public String canonical() {
         return "https://github.com/" + owner + "/" + repo;
     }
-
-    // 기본 브랜치의 zip. codeload는 HEAD를 기본 브랜치로 해석한다.
-    public String zipballUrl() {
-        return "https://codeload.github.com/" + owner + "/" + repo + "/zip/HEAD";
-    }
 }

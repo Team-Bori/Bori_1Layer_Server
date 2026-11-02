@@ -13,11 +13,20 @@ import com.example.bori.domain.model.domain.AiModelRepository;
 import com.example.bori.domain.pi.domain.HostPi;
 import com.example.bori.domain.pi.domain.HostPiRepository;
 import com.example.bori.domain.pi.service.HostPiService;
+import com.example.bori.domain.queue.service.QueueService;
 import com.example.bori.domain.relay.socket.RelayConnectionRegistry;
+import com.example.bori.domain.session.domain.BoardSession;
+import com.example.bori.domain.session.domain.BoardSessionRepository;
+import com.example.bori.domain.session.domain.EndReason;
+import com.example.bori.domain.session.service.SessionLifecycleService;
+import com.example.bori.domain.user.domain.User;
 import com.example.bori.global.error.BusinessException;
 import com.example.bori.global.error.ErrorCode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,11 +42,28 @@ public class AdminCloudBoardService {
     private final AdminActionLogService adminActionLogService;
     private final RelayConnectionRegistry relayConnectionRegistry;
     private final HostPiRepository hostPiRepository;
+    private final BoardSessionRepository boardSessionRepository;
+    private final SessionLifecycleService lifecycleService;
+    private final QueueService queueService;
 
     public List<AdminCloudBoardResponse> getBoards() {
+        Map<Long, BoardSession> active = boardSessionRepository.findAllByEndedAtIsNull().stream()
+                .collect(Collectors.toMap(s -> s.getCloudBoard().getId(), Function.identity()));
         return cloudBoardRepository.findAllByDeletedAtIsNullOrderByIdAsc().stream()
-                .map(AdminCloudBoardResponse::from)
+                .map(board -> AdminCloudBoardResponse.of(board, currentSession(active.get(board.getId()))))
                 .toList();
+    }
+
+    // 진행 중 세션 강제 종료. 학생 화면에는 강제 종료로 기록된다.
+    @Transactional
+    public void forceEnd(Long adminId, Long boardId) {
+        CloudBoard board = getBoard(boardId);
+        BoardSession session = boardSessionRepository.findByCloudBoardIdAndEndedAtIsNull(boardId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+        User user = session.getUser();
+        lifecycleService.end(session.getId(), EndReason.FORCED, "관리자가 세션을 종료했습니다.", true);
+        adminActionLogService.record(adminId, AdminAction.FORCE_END, TargetType.BOARD_SESSION, session.getId(),
+                "%s · %s (%s)".formatted(board.getName(), user.getName(), user.getStudentNo()));
     }
 
     // 등록 직후엔 오프라인이다. 릴레이 Pi가 이 시리얼을 보고하면 온라인으로 바뀐다.
@@ -99,9 +125,13 @@ public class AdminCloudBoardService {
         return AdminCloudBoardResponse.from(board);
     }
 
+    // 사용 중이면 세션도 끊고, 대기는 모두 취소한다. 지난 이력은 남는다.
     @Transactional
     public void delete(Long adminId, Long boardId) {
         CloudBoard board = getBoard(boardId);
+        boardSessionRepository.findByCloudBoardIdAndEndedAtIsNull(boardId)
+                .ifPresent(s -> lifecycleService.end(s.getId(), EndReason.FORCED, "보드가 삭제되었습니다.", true));
+        queueService.cancelAll(boardId);
         board.delete(LocalDateTime.now());
         adminActionLogService.record(adminId, AdminAction.DELETE, TargetType.CLOUD_BOARD, board.getId(), board.getName() + " 삭제");
     }
@@ -112,6 +142,14 @@ public class AdminCloudBoardService {
                 connection -> board.attach(hostPiRepository.getReferenceById(connection.getPiId()),
                         connection.reportedSlot(board.getSerialCode()).orElse(null)),
                 board::markOffline);
+    }
+
+    private AdminCloudBoardResponse.CurrentSession currentSession(BoardSession s) {
+        if (s == null) {
+            return null;
+        }
+        return new AdminCloudBoardResponse.CurrentSession(s.getId(), s.getUser().getName(), s.getUser().getStudentNo(),
+                s.modelLabel(), s.getStartedAt());
     }
 
     private CloudBoard getBoard(Long boardId) {

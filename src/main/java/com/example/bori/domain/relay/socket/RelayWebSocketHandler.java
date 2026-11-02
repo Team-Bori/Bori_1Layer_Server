@@ -28,6 +28,10 @@ import tools.jackson.databind.ObjectMapper;
 public class RelayWebSocketHandler extends AbstractWebSocketHandler {
 
     private static final String CONNECTION = "relayConnection";
+    // 기본 버퍼(8 KiB)로는 밀린 metric 묶음(최대 60개)을 받을 수 없다.
+    // 컨테이너 전역 설정(ServletServerContainerFactoryBean)은 MOCK 웹 환경 테스트에서 뜨지 않아 세션마다 건다.
+    private static final int TEXT_LIMIT = 256 * 1024;
+    private static final int BINARY_LIMIT = 512 * 1024;
 
     private final RelayConnectionRegistry registry;
     private final RelaySender relaySender;
@@ -50,6 +54,8 @@ public class RelayWebSocketHandler extends AbstractWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         Long piId = (Long) session.getAttributes().get(RelayHandshakeInterceptor.PI_ID);
+        session.setTextMessageSizeLimit(TEXT_LIMIT);
+        session.setBinaryMessageSizeLimit(BINARY_LIMIT);
         RelayConnection connection = new RelayConnection(piId, session);
         session.getAttributes().put(CONNECTION, connection);
         registry.register(connection);

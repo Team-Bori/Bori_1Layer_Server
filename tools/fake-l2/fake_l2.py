@@ -54,9 +54,27 @@ class FakeL2:
         print(f"[fake-l2 {datetime.now().strftime('%H:%M:%S')}]", *a, flush=True)
 
     async def send(self, type_, data, reply_to=None):
-        await self.ws.send(envelope(type_, data, reply_to))
+        try:
+            await self.ws.send(envelope(type_, data, reply_to))
+        except ConnectionClosed:
+            return  # 끊긴 동안 보낸 건 버린다 (재연결하면 hello로 상태를 맞춘다)
         if type_ not in ("ping", "metric", "serial_log"):
             self.log("→", type_, json.dumps(data, ensure_ascii=False)[:200])
+
+    async def run_forever(self):
+        # 규격 §1 재연결: 1초, 2초, 4초 … 최대 30초. 실행 중 세션은 유지하고 hello로 알린다.
+        delay = 1
+        while True:
+            try:
+                await self.run()
+                delay = 1
+            except (OSError, ConnectionClosed, Exception) as e:  # noqa: BLE001
+                self.log("연결 실패:", type(e).__name__, e)
+            if self.args.no_reconnect:
+                return
+            self.log(f"{delay}초 뒤 재연결")
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 30)
 
     async def run(self):
         headers = {"Authorization": f"Bearer {self.args.token}"}
@@ -67,7 +85,8 @@ class FakeL2:
                 "agentVersion": "fake-0.1.0",
                 "piSerial": self.args.pi_serial,
                 "boards": [{"serialCode": b["serialCode"], "usbSlot": b["usbSlot"]} for b in self.boards],
-                "runningSessions": [{"sessionId": s, "serialCode": v["serialCode"]} for s, v in self.sessions.items()],
+                "runningSessions": [{"sessionId": s, "serialCode": v["serialCode"]}
+                                    for s, v in self.sessions.items() if v.get("running")],
             })
             tasks = [asyncio.create_task(self.ping_loop())]
             try:
@@ -81,9 +100,11 @@ class FakeL2:
             finally:
                 for t in tasks:
                     t.cancel()
-                for s in self.sessions.values():
-                    if s.get("task"):
-                        s["task"].cancel()
+                # 설치·전송 중이던 세션은 버린다. 실행 중인 세션은 계속 돈다 (다음 hello에 보고).
+                for sid in [k for k, v in self.sessions.items() if not v.get("running")]:
+                    task = self.sessions.pop(sid).get("task")
+                    if task:
+                        task.cancel()
             self.log("종료 코드", ws.close_code, ws.close_reason)
 
     async def ping_loop(self):
@@ -208,9 +229,10 @@ def main():
     p.add_argument("--step-delay", type=float, default=1.0, help="install/run 단계 사이 지연(초)")
     p.add_argument("--fail-sha", type=int, default=0, help="처음 N번 file_ack를 SHA256_MISMATCH로 실패")
     p.add_argument("--fail-install", action="store_true", help="install 단계를 실패시킨다")
+    p.add_argument("--no-reconnect", action="store_true", help="끊기면 다시 연결하지 않고 끝낸다")
     args = p.parse_args()
     try:
-        asyncio.run(FakeL2(args).run())
+        asyncio.run(FakeL2(args).run_forever())
     except KeyboardInterrupt:
         sys.exit(0)
 

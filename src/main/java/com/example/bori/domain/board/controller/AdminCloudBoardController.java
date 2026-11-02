@@ -61,6 +61,12 @@ public class AdminCloudBoardController {
         return ResponseEntity.ok(adminCloudBoardService.changeUploadLimit(admin.getUserId(), boardId, request.uploadLimitMb()));
     }
 
+    @PostMapping("/{boardId}/force-end")
+    public ResponseEntity<Void> forceEnd(@AuthenticationPrincipal CustomUserDetails admin, @PathVariable Long boardId) {
+        adminCloudBoardService.forceEnd(admin.getUserId(), boardId);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{boardId}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal CustomUserDetails admin, @PathVariable Long boardId) {
         adminCloudBoardService.delete(admin.getUserId(), boardId);

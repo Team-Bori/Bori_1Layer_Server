@@ -287,7 +287,7 @@ L1이 하는 일:
 { "sessionId": 1042, "reason": "idle" }
 ```
 
-- `reason`: `normal` (학생 종료) · `idle` (15분 유휴) · `forced` (관리자 강제 종료)
+- `reason`: `normal` (학생 종료) · `idle` (15분 유휴) · `forced` (관리자 강제 종료) · `failed` (L1 쪽 실패로 정리: 파일 검증 두 번 실패, 배포 시간 초과 등)
 - L2는 실행을 멈추고 보드에서 학생 파일을 지운 뒤 `session_ended`를 보낸다.
 - L1은 `stop`을 보내자마자 DB 세션을 끝낸다 (L2 응답을 기다리지 않는다). `session_ended`는 요약 지표를 받으려고 쓴다.
 

@@ -1,6 +1,7 @@
 package com.example.bori.global.error;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -48,6 +49,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
         ErrorCode errorCode = ErrorCode.METHOD_NOT_ALLOWED;
+        return ResponseEntity.status(errorCode.getStatus()).body(ErrorResponse.of(errorCode));
+    }
+
+    // 부분 유니크 인덱스(진행 중 세션, 활성 대기 등)가 동시 요청을 막은 경우
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException e) {
+        log.info("Data integrity violation: {}", e.getMostSpecificCause().getMessage());
+        ErrorCode errorCode = ErrorCode.CONFLICT;
         return ResponseEntity.status(errorCode.getStatus()).body(ErrorResponse.of(errorCode));
     }
 
