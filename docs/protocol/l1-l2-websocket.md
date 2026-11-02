@@ -16,9 +16,18 @@ Authorization: Bearer <파이 토큰>
 ```
 
 - **L2가 먼저 연결한다.** L1은 L2의 주소를 몰라도 된다.
-- 파이 토큰은 관리자가 파이마다 발급한다. L1은 해시(`host_pi.token_hash`)만 저장한다. 토큰이 틀리면 L1은 핸드셰이크를 `401`로 거절한다.
+- 파이 토큰은 관리자가 파이마다 발급한다 (`POST /api/admin/pis` 등록 시, `POST /api/admin/pis/{id}/token` 재발급). 원문은 그 응답에서만 보이고, L1은 SHA-256 해시(`host_pi.token_hash`)만 저장한다. 토큰이 틀리면 L1은 핸드셰이크를 `401`로 거절한다.
 - 같은 파이가 두 번 연결하면 L1은 **이전 연결을 닫는다** (close code `4001 replaced`).
 - 연결 직후 L2는 반드시 `hello`를 보낸다. `hello` 전에 온 다른 메시지는 무시한다. 10초 안에 `hello`가 없으면 L1이 연결을 닫는다 (`4002 hello timeout`).
+
+### close code
+
+| code | 이유 |
+|---|---|
+| `4001 replaced` | 같은 파이가 새로 연결함 |
+| `4002 hello timeout` | 연결 후 10초 안에 `hello` 없음 |
+| `4003 no message for 30s` | 30초 동안 아무 메시지 없음 |
+| `4004 pi mismatch` | `hello.piSerial`이 토큰의 파이와 다름 |
 
 ### 재연결
 - L2는 끊기면 1초, 2초, 4초 … 최대 30초 간격으로 다시 연결한다.
@@ -124,9 +133,9 @@ Authorization: Bearer <파이 토큰>
 - `boards`: 지금 USB-UART로 응답하는 보드 **전체**. 보드 식별은 `/dev/ttyUSB*` 순서가 아니라 시리얼 번호로 한다 (재부팅하면 순서가 바뀔 수 있다).
 
 L1이 하는 일:
-1. `boards`에 있고 DB에 등록된 보드 → `is_online = true`, `pi_id`·`usb_slot` 갱신 (다른 파이로 옮겨 꽂은 경우 포함).
+1. `boards`에 있고 DB에 등록된 보드 → `is_online = true`, `pi_id`·`usb_slot` 갱신 (다른 파이로 옮겨 꽂은 경우 포함). 슬롯은 L2 보고가 기준이라 DB에 `(pi_id, usb_slot)` 유니크 제약을 두지 않는다 (V3).
 2. 이 파이에 등록돼 있는데 `boards`에 없는 보드 → `is_online = false`.
-3. DB에 없는 시리얼 → 무시하고 `hello_ack.unknownBoards`에 담아 돌려준다. **보드 등록은 관리자 화면에서만 한다.**
+3. DB에 없는 시리얼 → 무시하고 `hello_ack.unknownBoards`에 담아 돌려준다. **보드 등록은 관리자 화면에서만 한다.** 관리자가 나중에 그 시리얼을 등록하면 L1이 기억해 둔 보고로 바로 온라인이 된다.
 4. `runningSessions` 대조:
    - DB에서도 진행 중 → 그대로 둔다 (지표를 계속 받는다).
    - DB에선 이미 끝난 세션 → `stop`(`reason: "normal"`)을 보낸다.
@@ -386,9 +395,18 @@ firmware: build/firmware.bin   # 보드에 플래싱할 파일
 
 ---
 
-## 7. 정해지지 않은 것
+## 7. 개발용 가짜 L2
 
-- 파이 토큰 발급·폐기 방법 (지금은 관리자가 DB에 직접 넣는다고 가정)
+`tools/fake-l2/fake_l2.py` — 이 규격대로 움직이는 가짜 에이전트. 하드웨어 없이 L1·프론트를 개발할 때 쓴다.
+
+```
+pip install websockets
+python3 tools/fake-l2/fake_l2.py --url ws://localhost:8080/ws/l2 --token <토큰> \
+    --pi-serial <파이 시리얼> --board <보드 시리얼>:USB-1:jetson --board <시리얼>:USB-2:mcu
+```
+
+## 8. 정해지지 않은 것
+
 - 비공개 GitHub 저장소 지원 여부
 - `metric_sample` 보관 기간 (제안: 30일)
 - L2↔L3 UART 규격 (`bori.yaml`의 `run` 결과에서 지표·정확도를 뽑는 방법 포함)

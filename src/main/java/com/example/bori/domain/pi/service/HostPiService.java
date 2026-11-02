@@ -8,6 +8,7 @@ import com.example.bori.domain.pi.controller.dto.HostPiResponse;
 import com.example.bori.domain.pi.controller.dto.HostPiTokenResponse;
 import com.example.bori.domain.pi.domain.HostPi;
 import com.example.bori.domain.pi.domain.HostPiRepository;
+import com.example.bori.domain.relay.socket.RelayConnectionRegistry;
 import com.example.bori.global.error.BusinessException;
 import com.example.bori.global.error.ErrorCode;
 import java.util.List;
@@ -24,10 +25,11 @@ public class HostPiService {
     private final HostPiRepository hostPiRepository;
     private final PiTokenGenerator tokenGenerator;
     private final AdminActionLogService adminActionLogService;
+    private final RelayConnectionRegistry relayConnectionRegistry;
 
     public List<HostPiResponse> getPis() {
         return hostPiRepository.findAll(Sort.by("id")).stream()
-                .map(HostPiResponse::from)
+                .map(pi -> HostPiResponse.of(pi, relayConnectionRegistry.isConnected(pi.getId())))
                 .toList();
     }
 

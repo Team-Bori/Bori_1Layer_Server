@@ -44,6 +44,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // L2는 핸드셰이크에서 파이 토큰으로 인증한다 (RelayHandshakeInterceptor)
+                        .requestMatchers("/ws/l2").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

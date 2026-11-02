@@ -7,10 +7,11 @@ public record HostPiResponse(
         Long id,
         String name,
         String serialCode,
+        boolean connected,
         LocalDateTime lastUsedAt
 ) {
 
-    public static HostPiResponse from(HostPi pi) {
-        return new HostPiResponse(pi.getId(), pi.getName(), pi.getSerialCode(), pi.getLastUsedAt());
+    public static HostPiResponse of(HostPi pi, boolean connected) {
+        return new HostPiResponse(pi.getId(), pi.getName(), pi.getSerialCode(), connected, pi.getLastUsedAt());
     }
 }

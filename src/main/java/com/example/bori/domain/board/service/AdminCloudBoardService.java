@@ -11,7 +11,9 @@ import com.example.bori.domain.board.domain.CloudBoardRepository;
 import com.example.bori.domain.model.domain.AiModel;
 import com.example.bori.domain.model.domain.AiModelRepository;
 import com.example.bori.domain.pi.domain.HostPi;
+import com.example.bori.domain.pi.domain.HostPiRepository;
 import com.example.bori.domain.pi.service.HostPiService;
+import com.example.bori.domain.relay.socket.RelayConnectionRegistry;
 import com.example.bori.global.error.BusinessException;
 import com.example.bori.global.error.ErrorCode;
 import java.time.LocalDateTime;
@@ -29,6 +31,8 @@ public class AdminCloudBoardService {
     private final AiModelRepository aiModelRepository;
     private final HostPiService hostPiService;
     private final AdminActionLogService adminActionLogService;
+    private final RelayConnectionRegistry relayConnectionRegistry;
+    private final HostPiRepository hostPiRepository;
 
     public List<AdminCloudBoardResponse> getBoards() {
         return cloudBoardRepository.findAllByDeletedAtIsNullOrderByIdAsc().stream()
@@ -49,6 +53,7 @@ public class AdminCloudBoardService {
         CloudBoard board = cloudBoardRepository.save(new CloudBoard(
                 pi, request.name().trim(), request.spec(), request.boardType(), request.host(), request.uploadLimitMb(),
                 request.serialCode(), request.usbSlot(), request.executeAble(), findModels(request.modelIds())));
+        syncWithRelay(board);
         adminActionLogService.record(adminId, AdminAction.CREATE, TargetType.CLOUD_BOARD, board.getId(), board.getName() + " 등록");
         return AdminCloudBoardResponse.from(board);
     }
@@ -65,6 +70,7 @@ public class AdminCloudBoardService {
         HostPi pi = hostPiService.getPi(request.piId());
         board.update(pi, request.name().trim(), request.spec(), request.boardType(), request.host(), request.uploadLimitMb(),
                 request.serialCode(), request.usbSlot(), request.executeAble(), findModels(request.modelIds()));
+        syncWithRelay(board);
         adminActionLogService.record(adminId, AdminAction.UPDATE, TargetType.CLOUD_BOARD, board.getId(), board.getName() + " 정보 수정");
         return AdminCloudBoardResponse.from(board);
     }
@@ -98,6 +104,14 @@ public class AdminCloudBoardService {
         CloudBoard board = getBoard(boardId);
         board.delete(LocalDateTime.now());
         adminActionLogService.record(adminId, AdminAction.DELETE, TargetType.CLOUD_BOARD, board.getId(), board.getName() + " 삭제");
+    }
+
+    // 이미 어떤 파이가 이 시리얼을 보고했다면 그 위치로 바로 온라인. 아니면 오프라인.
+    private void syncWithRelay(CloudBoard board) {
+        relayConnectionRegistry.findReporting(board.getSerialCode()).ifPresentOrElse(
+                connection -> board.attach(hostPiRepository.getReferenceById(connection.getPiId()),
+                        connection.reportedSlot(board.getSerialCode()).orElse(null)),
+                board::markOffline);
     }
 
     private CloudBoard getBoard(Long boardId) {
